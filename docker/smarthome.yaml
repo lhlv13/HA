@@ -1,0 +1,55 @@
+version: '3'
+services:
+  homeassistant:
+    container_name: homeassistant
+    restart: unless-stopped
+    image: homeassistant/home-assistant
+    labels:
+      - com.centurylinklabs.watchtower.enable=true
+      
+    # devices:
+    #   - /dev/ttyUSB0:/dev/ttyUSB0
+    #   - /dev/ttyUSB1:/dev/ttyUSB1
+    #   - /dev/ttyACM0:/dev/ttyACM0
+      
+    volumes:
+      - ${DATADIR}/docker/homeassistant/config:/config
+      - /etc/localtime:/etc/localtime:ro
+      # - /dev/serial/by-id/:/dev/serial/by-id/
+    
+    ## alternative needed for auto discovery, bluetooth,...
+    # network_mode: host
+    privileged: true
+    # depends_on:
+      # influxdb:
+        # condition: service_healthy
+      # mosquitto:
+        # condition: service_started
+    ports:
+      - 8123:8123
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    networks:
+      - docker-net
+
+
+  tasmoadmin:
+    image: "raymondmm/tasmoadmin"
+    container_name: TasmoAdmin
+    restart: unless-stopped
+    labels:
+      - com.centurylinklabs.watchtower.enable=true
+    
+    volumes:
+      - ${DATADIR}/docker/tasmoadmin:/data
+    ports:
+      - 3080:80
+    networks:
+      - docker-net
+    
+networks:
+  docker-net:
+    external:
+      name: docker-net

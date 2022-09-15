@@ -1,0 +1,75 @@
+version: '3'
+services:
+  portainer:
+    image: portainer/portainer
+    container_name: portainer
+    restart: always
+    labels:
+      - com.centurylinklabs.watchtower.enable=true
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ${DATADIR}/docker/portainer/data:/data
+    expose:
+    ##  expose port to other containers
+      - 9000
+    ports:
+    ##  maps internal port, 9000, to host port, 8800
+      - 8800:9000
+    networks:
+      - docker-net
+
+
+
+  watchtower:
+    image: containrrr/watchtower
+    container_name: watchtower
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      #  - ${DATADIR}/docker/portainer/config.json:/config.json
+    command: --interval 30 --cleanup --label-enable #--debug
+    restart: always
+    networks:
+      - docker-net
+    labels:
+      - com.centurylinklabs.watchtower.enable=true
+
+
+
+  heimdall:
+    image: linuxserver/heimdall
+    container_name: heimdall
+    restart: unless-stopped
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=${TZ}
+    volumes:
+      - ${DATADIR}/docker/heimdall:/config
+    ports:
+      - 9080:80
+      - 9443:443
+    networks:
+      - docker-net
+
+
+
+  #MQTT
+  mosquitto:
+    container_name: mqtt
+    #  hostname: mosquitto
+    restart: always
+    image: eclipse-mosquitto
+    ports:
+      - 1883:1883
+      - 9001:9001
+    volumes:
+      - ${DATADIR}/docker/mqtt/config/mosquitto.conf:/mosquitto/config/mosquitto.conf
+      - ${DATADIR}/docker/mqtt/data:/mosquitto/data
+      - ${DATADIR}/docker/mqtt/log:/mosquitto/log
+    networks:
+      - docker-net
+
+networks:
+  docker-net:
+    external:
+      name: docker-net
