@@ -1,0 +1,421 @@
+
+# Loads default set of integrations. Do not remove.
+default_config:
+
+# Text to speech
+tts:
+  - platform: google_translate
+
+automation: !include automations.yaml
+script: !include scripts.yaml
+scene: !include scenes.yaml
+
+
+influxdb:
+  host: 192.168.0.75
+  database: homeassistant
+  username: homeassistant
+  password: homeassistant
+  include:
+    domains:
+      - sensor
+  exclude:
+    entities:
+      - sensor.date
+      - sensor.date_time
+      - sensor.internet_time
+      - sensor.time
+      - sensor.time_date
+      - sensor.time_utc
+
+
+
+#####
+modbus:
+  - name: hub1
+    type: tcp
+    host: 192.168.0.100
+    port: 502
+    sensors:
+      ############################### 7樓電表
+      - name: modbus_meter_w
+        slave: 1
+        address: 100
+        input_type: holding
+        count: 2
+        unit_of_measurement: "W"
+        data_type: float32
+        swap: word
+
+      - name: modbus_meter_kWh
+        slave: 1
+        address: 158
+        input_type: holding
+        count: 2
+        unit_of_measurement: "kWh"
+        data_type: float32
+        swap: word
+
+      - name: modbus_meter_v
+        slave: 1
+        address: 140
+        input_type: holding
+        count: 2
+        unit_of_measurement: "V"
+        data_type: float32
+        swap: word
+
+      - name: modbus_meter_i
+        slave: 1
+        address: 148
+        input_type: holding
+        count: 2
+        unit_of_measurement: "A"
+        data_type: float32
+        swap: word
+
+      ############################## 儲能
+      - name: ESS_SOC
+        slave: 2
+        address: 5124
+        input_type: holding
+        count: 1
+        unit_of_measurement: "%"
+        data_type: int16
+        scan_interval: 1
+
+      - name: modbus_ess_battery_mv
+        slave: 2
+        address: 5122
+        input_type: holding
+        count: 1
+        unit_of_measurement: "mV"
+        scan_interval: 5
+        data_type: uint16
+
+      - name: modbus_ess_battery_temperature_10
+        slave: 2
+        address: 5126
+        input_type: holding
+        count: 1
+
+      - name: modbus_ess_L1_watt
+        slave: 2
+        address: 4610
+        input_type: holding
+        count: 2
+        unit_of_measurement: "W"
+        data_type: int32
+        scale: 0.1
+
+      - name: modbus_ess_L2_watt
+        slave: 2
+        address: 4674
+        input_type: holding
+        count: 2
+        unit_of_measurement: "W"
+        data_type: int32
+        scale: 0.1
+
+      - name: modbus_main_power_today
+        slave: 2
+        address: 4647
+        input_type: holding 
+        unit_of_measurement: "Wh" 
+        data_type: int16
+
+
+      - name: modbus_ess_L1_I
+        slave: 2
+        address: 4619
+        input_type: holding
+        count: 1
+        unit_of_measurement: "A"
+        data_type: int16
+
+      - name: modbus_ess_L2_I
+        slave: 2
+        address: 4683
+        input_type: holding
+        count: 1
+        unit_of_measurement: "A"
+        data_type: int16
+
+      - name: modbus_ess_out_220_V
+        slave: 2
+        address: 314
+        input_type: holding
+        count: 1
+        unit_of_measurement: "V"
+        data_type: int16
+        scale: 0.1
+
+      - name: modbus_ess_frequency
+        slave: 2
+        address: 4617
+        input_type: holding
+        count: 1
+        unit_of_measurement: "Hz"
+        data_type: int16
+        scale: 0.01
+
+  - name: hub2
+    type: tcp
+    host: 192.168.0.173
+    port: 502
+    sensors:
+      ############################### 太陽能
+
+      - name: modbus_pv_kWh
+        slave: 3
+        address: 30775
+        input_type: holding
+        count: 2
+        data_type: int32
+        unit_of_measurement: "W"
+
+      - name: modbus_pv_V100
+        slave: 3
+        address: 30783
+        input_type: holding
+        count: 2
+        data_type: int32
+        unit_of_measurement: "mV"
+
+      - name: modbus_pv_mA
+        slave: 3
+        address: 30977
+        input_type: holding
+        count: 2
+        data_type: int32
+        unit_of_measurement: "mA"
+      ############################## TEST
+    # switches:
+    #   - name: modbus_switch1
+    #     slave: 4
+    #     address: 4622
+    #     command_on: 100
+    #     command_off: 20
+        # verify:
+        #   input_type: holding
+        #   slave: 2
+        #   address: 4624
+        #   state_on: 25
+        #   state_off: 24
+
+
+
+template:
+- sensor:
+  ########################################### 電表
+  - name: "7F_Meter_W"
+    unit_of_measurement: "W"
+    state: >
+      {% set w = states('sensor.modbus_meter_w') | int %}
+        {{ w }}
+    state_class: measurement
+    device_class: power
+
+  - name: "7F_Meter_kWh"
+    unit_of_measurement: "kWh"
+    state: >
+      {% set w = states('sensor.modbus_meter_kWh') | float %}
+        {{ w/1000 }}
+    state_class: total_increasing
+    device_class: energy
+
+  - name: "7F_Meter_V"
+    unit_of_measurement: "V"
+    state: >
+      {% set v = states('sensor.modbus_meter_v') | int %}
+        {{ v }}
+    state_class: measurement
+    device_class: voltage
+
+  - name: "7F_Meter_I"
+    unit_of_measurement: "A"
+    state: >
+      {% set i = states('sensor.modbus_meter_i') | int %}
+        {{ i }}
+    state_class: measurement
+    device_class: current
+
+  ########################################### 儲能
+  - name: "ESS_Frequency"
+    unit_of_measurement: "Hz"
+    state: >
+      {% set f = states('sensor.modbus_ess_frequency') | int %}
+        {{ f }}
+    state_class: measurement
+    device_class: frequency
+
+  - name: "ESS_V"
+    unit_of_measurement: "V"
+    state: >
+      {% set v = states('sensor.modbus_ess_out_220_V') | int %}
+        {{ v }}
+    state_class: measurement
+    device_class: voltage
+
+  - name: "ESS_I"
+    unit_of_measurement: "A"
+    state: >
+      {% set i1 = states('sensor.modbus_ess_L1_I') | float %}
+      {% set i2 = states('sensor.modbus_ess_L2_I') | float %}
+        {{ (i1 + i2) / 100 }}
+    state_class: measurement
+    device_class: current
+
+  - name: "ESS_W"
+    unit_of_measurement: "W"
+    state: >
+      {% set w1 = states('sensor.modbus_ess_L1_watt') | float %}
+      {% set w2 = states('sensor.modbus_ess_L2_watt') | float %}
+        {{ w1 + w2 }}
+    state_class: measurement
+    device_class: power
+
+  - name: "ESS_Charge_W"
+    unit_of_measurement: "W"
+    state: >
+      {% set w = states('sensor.ESS_W') | float %}
+      {% if w < 0 %}
+        {{ -1 * w }}
+      {% else %}
+        {{ 0 }}
+      {% endif %}
+    state_class: measurement
+    device_class: power
+
+  - name: "ESS_Discharge_W"
+    unit_of_measurement: "W"
+    state: >
+      {% set w = states('sensor.ESS_W') | float %}
+      {% if w > 0 %}
+        {{ w }}
+      {% else %}
+        {{ 0 }}
+      {% endif %}
+    state_class: measurement
+    device_class: power
+
+  - name: "ESS_ENERGY_CHARGE"
+    unit_of_measurement: "Wh"
+    state: >
+      {% set wh = states('sensor.ESS_Charge_W') | float %}
+      {{ wh }}
+    state_class: total_increasing
+    device_class: energy
+    attributes:
+      last_reset: '1997-01-01T00:00:00+00:00'
+
+  - name: "ESS_ENERGY_DISCHARGE"
+    unit_of_measurement: "kWh"
+    state: >
+      {% set wh = states('sensor.ESS_Discharge_W') | float %}
+      {{ wh/1000 }}
+    state_class: total_increasing
+    device_class: energy
+    attributes:
+      last_reset: '1997-01-01T00:00:00+00:00'
+
+
+  - name: "ESS_Battery_V"
+    unit_of_measurement: "V"
+    state: >
+      {% set mV = states('sensor.modbus_ess_battery_mv') | float %}
+        {{ mV / 1000 }}
+    state_class: measurement
+    device_class: voltage
+
+  - name: "ESS_Battery_Temperature"
+    unit_of_measurement: "C"
+    state: >
+      {% set t = states('sensor.modbus_ess_battery_temperature_10') | float %}
+        {{ t / 10 }}
+    state_class: measurement
+    device_class: temperature
+
+#   - name: "ESS_SOC"
+#     unit_of_measurement: "%"
+#     state: >
+#       {% set percent = states('sensor.modbus_ess_soc') | int %}
+#         {{ percent }}
+#     state_class: measurement
+
+  ########################################### 太陽能
+  - name: "PV_kWh"
+    unit_of_measurement: "kWh"
+    state: >
+      {% set w = states('sensor.modbus_pv_kWh') | float /1000%}
+      {% if w > 0 and w < 10000 %}
+        {{ w }}
+      {% else %}
+        {{ 0 }}
+      {% endif %}
+    state_class: total_increasing
+    device_class: energy
+
+  - name: "PV_V"
+    unit_of_measurement: "V"
+    state: >
+      {% set v = states('sensor.modbus_pv_V100') | float /100 %}
+      {% if v > 0 and v < 10000 %}
+        {{ v }}
+      {% else %}
+        {{ 0 }}
+      {% endif %}
+    state_class: measurement
+    device_class: voltage
+
+  - name: "PV_I"
+    unit_of_measurement: "A"
+    state: >
+      {% set i = states('sensor.modbus_pv_mA') | float /1000 %}
+      {% if i > 0 and i < 10000 %}
+        {{ i }}
+      {% else %}
+        {{ 0 }}
+      {% endif %}
+    state_class: measurement
+    device_class: current
+
+
+
+#########################################################################################
+# sensor
+#########################################################################################
+
+sensor:
+  - platform: systemmonitor
+    resources:
+      - type: disk_use_percent
+        arg: /config
+      - type: disk_use
+        arg: /config
+      - type: disk_free
+        arg: /config
+      - type: memory_use_percent
+      - type: memory_use
+      - type: memory_free
+      - type: processor_use
+      - type: processor_temperature
+      - type: packets_in
+        arg: docker0
+      - type: packets_out
+        arg: docker0
+      - type: ipv4_address
+        arg: docker0
+      - type: network_in
+        arg: docker0
+      - type: network_out
+        arg: docker0
+      - type: network_in
+        arg: usb0
+      - type: network_out
+        arg: usb0
+      - type: network_in
+        arg: lo
+      - type: network_out
+        arg: lo
+
