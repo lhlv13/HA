@@ -1,0 +1,23 @@
+version: '3'
+services:
+  esphome:
+    container_name: esphome
+    image: esphome/esphome
+    volumes:
+      - ${DATADIR}/docker/esphome/config:/config
+      - /etc/localtime:/etc/localtime:ro
+    restart: always
+    privileged: true
+    ports:
+      - 6052:6052
+    devices:
+      - /dev/ttyUSB0:/dev/ttyUSB0
+      - /dev/ttyUSB1:/dev/ttyUSB1
+      - /dev/ttyS1:/dev/ttyS1
+      - /dev/ttyS10:/dev/ttyS10
+    networks:
+      - docker-net
+networks:
+  docker-net:
+    external:
+      name: docker-net
