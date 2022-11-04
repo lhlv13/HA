@@ -25,7 +25,6 @@ $ curl -sSL https://get.docker.com | sh​
 ![](https://i.imgur.com/yVi6DDW.png)
 
 
-### 安裝後續
 * <b>讓非root也可使用</b>
 ```
 $ sudo usermod -aG docker pi
@@ -42,3 +41,32 @@ $ docker -v
 ```
 $ sudo reboot
 ```
+
+## Docker-compose 安裝
+```
+$ sudo apt-get upgrade
+```
+* <b>安裝 pip</b>
+```
+$ sudo apt install -y python3-pip libffi-dev
+```
+* <b>安裝 docker-compose</b>
+```
+$ sudo pip3 install docker-compose
+```
+
+* <b>查看 docker-compose 版本</b>
+```
+$ docker-compose -v
+```
+![](https://i.imgur.com/b9ubcHa.png)
+
+
+## 設定開機啟用docker
+```
+$ sudo systemctl enable docker
+$ sudo reboot
+```
+![](https://i.imgur.com/WRh1gLq.png)
+
+
